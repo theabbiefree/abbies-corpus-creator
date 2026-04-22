@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>abbies® Corpus Creator</title>
+<style>
+  :root {
+    --cream: #f5e6c8;
+    --cream-dark: #e8d5ad;
+    --cream-darker: #d9c390;
+    --orange: #d4651a;
+    --orange-dark: #b8521200;
+    --orange-hover: #e8731f;
+    --cyan: #00a8b5;
+    --cyan-light: #00c4d4;
+    --ink: #1a1008;
+    --ink-mid: #3d2b10;
+    --ink-light: #6b4c22;
+    --ghost: rgba(26,16,8,0.08);
+    --ghost-mid: rgba(26,16,8,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--cream);
+    color: var(--ink);
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grain texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .brand {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+  }
+
+  .brand span {
+    color: var(--orange);
+    font-weight: bold;
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+
+  h1 em {
+    color: var(--orange);
+    font-style: normal;
+  }
+
+  .tagline {
+    font-size: 12px;
+    color: var(--ink-mid);
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--ghost-mid);
+  }
+
+  /* ── API KEY INPUT ── */
+  .api-block {
+    margin-bottom: 28px;
+  }
+
+  .api-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .api-input {
+    flex: 1;
+    background: rgba(255,255,255,0.45);
+    border: 2px solid var(--ink);
+    padding: 12px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .api-input:focus {
+    border-color: var(--orange);
+    background: rgba(255,255,255,0.7);
+  }
+
+  .api-input::placeholder {
+    color: var(--ink-light);
+    opacity: 0.6;
+  }
+
+  .toggle-btn {
+    background: var(--ink);
+    color: var(--cream);
+    border: 2px solid var(--ink);
+    padding: 0 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .toggle-btn:hover {
+    background: var(--orange);
+    border-color: var(--orange);
+  }
+
+  .api-hint {
+    margin-top: 7px;
+    font-size: 10px;
+    color: var(--ink-light);
+    letter-spacing: 0.05em;
+  }
+
+  .api-hint a {
+    color: var(--cyan);
+    text-decoration: none;
+    border-bottom: 1px solid var(--cyan);
+  }
+
+  .api-hint a:hover {
+    color: var(--orange);
+    border-color: var(--orange);
+  }
+
+  /* ── MODEL SELECT ROW ── */
+  .options-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .option-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  select {
+    width: 100%;
+    background: rgba(255,255,255,0.45);
+    border: 2px solid var(--ink);
+    padding: 10px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%231a1008' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  select:focus { border-color: var(--orange); }
+
+  /* ── PROJECT NAME ── */
+  .project-block {
+    margin-bottom: 28px;
+  }
+
+  .text-input {
+    width: 100%;
+    background: rgba(255,255,255,0.45);
+    border: 2px solid var(--ink);
+    padding: 12px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .text-input:focus {
+    border-color: var(--orange);
+    background: rgba(255,255,255,0.7);
+  }
+
+  .text-input::placeholder {
+    color: var(--ink-light);
+    opacity: 0.6;
+  }
+
+  .input-hint {
+    margin-top: 7px;
+    font-size: 10px;
+    color: var(--ink-light);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── THREAD INPUT ── */
+  .thread-block {
+    margin-bottom: 28px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 320px;
+    background: rgba(255,255,255,0.45);
+    border: 2px solid var(--ink);
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  textarea:focus {
+    border-color: var(--orange);
+    background: rgba(255,255,255,0.7);
+  }
+
+  textarea::placeholder {
+    color: var(--ink-light);
+    opacity: 0.5;
+    font-style: italic;
+  }
+
+  .char-count {
+    text-align: right;
+    font-size: 10px;
+    color: var(--ink-light);
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+  }
+
+  .char-count.warn { color: var(--orange); }
+
+  /* ── GENERATE BUTTON ── */
+  .generate-btn {
+    width: 100%;
+    background: var(--orange);
+    color: var(--cream);
+    border: 3px solid var(--ink);
+    padding: 18px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    box-shadow: 4px 4px 0 var(--ink);
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .generate-btn:hover:not(:disabled) {
+    background: var(--orange-hover);
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+
+  .generate-btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .generate-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .btn-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 12px 18px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    border: 2px solid var(--ink);
+    margin-bottom: 20px;
+  }
+
+  .status-bar.visible { display: flex; }
+  .status-bar.error { background: #8b1a00; border-color: #8b1a00; }
+  .status-bar.success { background: #1a6b3a; border-color: #1a6b3a; }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(245,230,200,0.3);
+    border-top-color: var(--cream);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── PREVIEW PANE ── */
+  .preview-block {
+    display: none;
+    margin-top: 32px;
+  }
+
+  .preview-block.visible { display: block; }
+
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .preview-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-btn {
+    background: transparent;
+    border: 2px solid var(--ink);
+    color: var(--ink);
+    padding: 7px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .action-btn:hover { background: var(--ink); color: var(--cream); }
+
+  .action-btn.cyan {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .action-btn.cyan:hover { background: var(--cyan); color: white; }
+
+  .preview-area {
+    background: rgba(255,255,255,0.5);
+    border: 2px solid var(--ink);
+    padding: 20px;
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 500px;
+    overflow-y: auto;
+    color: var(--ink-mid);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--ghost-mid);
+    font-size: 10px;
+    color: var(--ink-light);
+    letter-spacing: 0.12em;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── DECORATIVE RULE ── */
+  .deco-rule {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 32px 0;
+    opacity: 0.3;
+  }
+  .deco-rule::before, .deco-rule::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--ink);
+  }
+  .deco-rule span {
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="brand"><span>abbies®</span> · standalone toolkit · v2.0</div>
+    <h1>Corpus <em>Creator</em></h1>
+    <div class="tagline">// paste thread → extract intelligence → download corpus</div>
+  </header>
+
+  <!-- API KEY -->
+  <div class="api-block">
+    <div class="section-label">Together AI API Key</div>
+    <div class="api-row">
+      <input
+        class="api-input"
+        id="apiKey"
+        type="password"
+        placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="toggle-btn" onclick="toggleKey()">Show</button>
+    </div>
+    <div class="api-hint">
+      Token never stored — session memory only.
+      Generate free at <a href="https://api.together.ai/" target="_blank">api.together.ai</a> — takes 2 minutes.
+    </div>
+  </div>
+
+  <!-- MODEL + TOKENS -->
+  <div class="options-row">
+    <div class="option-group">
+      <div class="section-label">Model</div>
+      <select id="modelSelect">
+        <option value="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo">Llama 3.1 70B — balanced speed/quality (default)</option>
+        <option value="meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo">Llama 3.1 405B — maximum quality, slower</option>
+        <option value="mistralai/Mistral-Large-Instruct-2407">Mistral Large — balanced, strong reasoning</option>
+        <option value="NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO">Nous Hermes 2 Mixtral — fast alternative</option>
+      </select>
+    </div>
+    <div class="option-group">
+      <div class="section-label">Max Output Tokens</div>
+      <select id="maxTokens">
+        <option value="2000">2000 — concise</option>
+        <option value="4000" selected>4000 — standard</option>
+        <option value="6000">6000 — thorough</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- PROJECT NAME -->
+  <div class="project-block">
+    <div class="section-label">Project Name</div>
+    <input
+      class="text-input"
+      id="projectName"
+      type="text"
+      placeholder="my-project  (optional — used in filename)"
+      spellcheck="false"
+    />
+    <div class="input-hint">
+      Filename will be: <span id="filenamePreview" style="color: var(--orange);">project-YYYY-MM-DD-corpus.md</span>
+    </div>
+  </div>
+
+  <!-- THREAD INPUT -->
+  <div class="thread-block">
+    <div class="section-label">Raw Chat Thread</div>
+    <textarea
+      id="threadInput"
+      placeholder="Paste your full AI chat thread here — the entire conversation, start to finish. The longer and messier the better. Everything gets captured."
+      oninput="updateCount()"
+    ></textarea>
+    <div class="char-count" id="charCount">0 characters</div>
+  </div>
+
+  <!-- GENERATE -->
+  <button class="generate-btn" id="generateBtn" onclick="generateCorpus()">
+    <span class="btn-icon">◈</span>
+    <span>Generate Corpus</span>
+    <span class="btn-icon">◈</span>
+  </button>
+
+  <!-- STATUS -->
+  <div class="status-bar" id="statusBar">
+    <div class="spinner" id="spinner"></div>
+    <span id="statusText">Connecting to Together AI...</span>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="preview-block" id="previewBlock">
+    <div class="preview-header">
+      <div class="section-label" style="margin:0; flex:1">Generated Corpus</div>
+      <div class="preview-actions">
+        <button class="action-btn" onclick="copyCorpus()">Copy</button>
+        <button class="action-btn cyan" onclick="downloadCorpus()">↓ Download .md</button>
+      </div>
+    </div>
+    <div class="preview-area" id="previewArea"></div>
+  </div>
+
+  <div class="deco-rule"><span>◆</span></div>
+
+  <footer>
+    <span>abbies® corpus creator · theabbiefree on GitHub · MIT licensed · no backend · no subscription</span>
+  </footer>
+
+</div>
+
+<script>
+// ── STATE ──
+let corpusText = '';
+
+// ── FILENAME PREVIEW ──
+function getFilename() {
+  const raw = document.getElementById('projectName').value.trim();
+  const slug = raw
+    ? raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    : 'project';
+  const date = new Date().toISOString().slice(0, 10);
+  return `${slug}-${date}-corpus.md`;
+}
+
+function updateFilenamePreview() {
+  document.getElementById('filenamePreview').textContent = getFilename();
+}
+
+document.getElementById('projectName').addEventListener('input', updateFilenamePreview);
+updateFilenamePreview();
+
+// ── CHAR COUNT ──
+function updateCount() {
+  const n = document.getElementById('threadInput').value.length;
+  const el = document.getElementById('charCount');
+  el.textContent = n.toLocaleString() + ' characters' + (n > 60000 ? ' — very long thread, may be truncated' : '');
+  el.className = 'char-count' + (n > 60000 ? ' warn' : '');
+}
+
+// ── TOGGLE KEY VISIBILITY ──
+function toggleKey() {
+  const inp = document.getElementById('apiKey');
+  const btn = event.target;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.textContent = 'Hide';
+  } else {
+    inp.type = 'password';
+    btn.textContent = 'Show';
+  }
+}
+
+// ── EXTRACTION PROMPT ──
+const EXTRACTION_PROMPT = `You are a corpus archivist. Read the following AI chat thread and produce a structured corpus MD file that captures everything the next AI needs to know to continue this work without re-explanation.
+
+Structure the corpus with these sections:
+1. PREAMBLE — how to use this document
+2. WHAT WAS BUILT — tools, files, URLs, versions, status
+3. TECHNICAL ARCHITECTURE — key decisions, stack, critical lessons
+4. VERSION HISTORY — what was tried, what failed, what worked and why
+5. OPEN THREADS — what was discussed but not built, what comes next
+6. PHILOSOPHY — working principles established, key quotes
+7. MEMORABLE MOMENTS — the human details that matter
+8. HOW TO CONTINUE — specific instructions for the next AI
+
+Rules:
+- Be thorough but not verbose
+- Capture decisions AND the reasons behind them
+- Document failures as carefully as successes — they are equally valuable
+- Preserve the human's exact words for key quotes
+- Flag anything the next AI must NOT do or change
+
+Output only the MD file content. No preamble, no explanation.
+
+---
+
+CHAT THREAD:
+`;
+
+// ── STATUS HELPERS ──
+function setStatus(msg, type = 'default') {
+  const bar = document.getElementById('statusBar');
+  const text = document.getElementById('statusText');
+  const spinner = document.getElementById('spinner');
+  bar.className = 'status-bar visible' + (type === 'error' ? ' error' : type === 'success' ? ' success' : '');
+  text.textContent = msg;
+  spinner.style.display = (type === 'default') ? 'block' : 'none';
+}
+
+function hideStatus() {
+  document.getElementById('statusBar').className = 'status-bar';
+}
+
+// ── GENERATE ──
+async function generateCorpus() {
+  const token = document.getElementById('apiKey').value.trim();
+  const thread = document.getElementById('threadInput').value.trim();
+  const model = document.getElementById('modelSelect').value;
+  const maxTokens = parseInt(document.getElementById('maxTokens').value);
+
+  if (!token) { setStatus('⚠ Enter your Together AI API key first.', 'error'); return; }
+  if (!thread) { setStatus('⚠ Paste your chat thread first.', 'error'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  document.getElementById('previewBlock').className = 'preview-block';
+  setStatus('Connecting to Together AI...');
+
+  // Truncate very long threads (~80k chars ≈ ~20k tokens)
+  let safeThread = thread;
+  let truncated = false;
+  if (thread.length > 80000) {
+    safeThread = thread.slice(0, 80000) + '\n\n[THREAD TRUNCATED — too long for single request]';
+    truncated = true;
+  }
+
+  try {
+    setStatus('Sending thread to model — this may take 20–40 seconds...');
+
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: maxTokens,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a corpus archivist for AI collaboration sessions. You produce structured, thorough, machine-readable MD documents that allow future AI sessions to pick up exactly where the last left off.'
+          },
+          {
+            role: 'user',
+            content: EXTRACTION_PROMPT + safeThread
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData?.error?.message || response.statusText || 'Unknown error';
+      const status = response.status;
+
+      if (status === 401) throw new Error('⚠ Invalid API key. Check it and try again.');
+      if (status === 429) throw new Error('⚠ Rate limited by Together AI. Wait a moment and try again.');
+      if (status >= 500) throw new Error('⚠ Together AI is experiencing issues. Try again in a few moments.');
+      throw new Error(`⚠ API error ${status}: ${errMsg}`);
+    }
+
+    const data = await response.json();
+
+    // Extract text from response
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) throw new Error('⚠ Model returned no content. Try again or use a different model.');
+
+    corpusText = content;
+
+    const successMsg = truncated
+      ? '✓ Corpus generated (thread was truncated — very long). Download when ready.'
+      : '✓ Corpus generated — preview below. Download when ready.';
+
+    setStatus(successMsg, 'success');
+    document.getElementById('previewArea').textContent = corpusText;
+    document.getElementById('previewBlock').className = 'preview-block visible';
+    document.getElementById('previewBlock').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      setStatus('⚠ Network error. Check your connection and try again.', 'error');
+    } else {
+      setStatus(err.message.startsWith('⚠') ? err.message : '✗ ' + err.message, 'error');
+    }
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── DOWNLOAD ──
+function downloadCorpus() {
+  if (!corpusText) return;
+  const filename = getFilename();
+  const blob = new Blob([corpusText], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── COPY ──
+function copyCorpus() {
+  if (!corpusText) return;
+  navigator.clipboard.writeText(corpusText).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1800);
+  });
+}
+</script>
+</body>
+</html>
